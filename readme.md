@@ -23,7 +23,82 @@ O objetivo do sistema é substituir planilhas estáticas por um acompanhamento d
 | **Containerização** | Docker / Docker Compose |
 | **Tooling & Dev** | `ts-node`, `nodemon`, DBeaver |
 
+
 ---
+
+## 🗄️ Modelagem de Dados (Prisma Schema)
+
+O esquema do banco reflete o relacionamento relacional entre usuários (`Pessoa`), catálogo de exercícios (`Exercicio`), sessões executadas (`SessaoTreino`) e as séries individuais (`Series`). 
+
+Utilizamos `@map` e `@@map` para preservar o padrão `snake_case` no banco físico mantendo a convenção `camelCase` no ecossistema TypeScript:
+
+<details open>
+<summary><b>Clique para ver o arquivo <code>prisma/schema.prisma</code></b></summary>
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Pessoa {
+  id                  Int            @id @default(autoincrement())
+  peso                Decimal?       @db.Decimal(5, 2)
+  altura              Decimal?       @db.Decimal(3, 2)
+  taxaMetabolicaBasal Decimal?       @map("taxa_metabolica_basal") @db.Decimal(6, 2)
+  sessoesTreino       SessaoTreino[]
+
+  @@map("pessoa")
+}
+
+model Exercicio {
+  idExercicio   Int      @id @default(autoincrement()) @map("id_exercicio")
+  nomeExercicio String   @map("nome_exercicio") @db.VarChar(100)
+  grupoMuscular String?  @map("grupo_muscular") @db.VarChar(50)
+  permiteCarga  Boolean  @default(true) @map("permite_carga")
+  series        Series[]
+
+  @@map("exercicio")
+}
+
+model SessaoTreino {
+  idSessao        Int       @id @default(autoincrement()) @map("id_sessao")
+  idPessoa        Int       @map("id_pessoa")
+  dataHoraInicio  DateTime  @map("data_hora_inicio") @db.Timestamp()
+  dataHoraFim     DateTime? @map("data_hora_fim") @db.Timestamp()
+  observacoes     String?   @db.Text
+
+  // Relacionamentos
+  pessoa Pessoa   @relation(fields: [idPessoa], references: [id], onDelete: Cascade)
+  series Series[]
+
+  @@map("sessao_treino")
+}
+
+model Series {
+  idSerie        Int      @id @default(autoincrement()) @map("id_serie")
+  idSessao       Int      @map("id_sessao")
+  idExercicio    Int      @map("id_exercicio")
+  numeroSerie    Int      @map("numero_serie")
+  repsRealizadas Int?     @map("reps_realizadas")
+  cargaAdicional Decimal? @map("carga_adicional") @db.Decimal(5, 2)
+  concluido      Boolean? @default(false)
+
+  // Relacionamentos
+  sessao    SessaoTreino @relation(fields: [idSessao], references: [idSessao], onDelete: Cascade)
+  exercicio Exercicio    @relation(fields: [idExercicio], references: [idExercicio], onDelete: Restrict)
+
+  @@map("series")
+}
+
+
+---
+
+
 
 ## 🗺️ Roteiro de Desenvolvimento (10 Fases)
 
