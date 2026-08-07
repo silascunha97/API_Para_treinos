@@ -5,7 +5,6 @@
 
 ---
 
-````markdown
 ## 🏗️ Estrutura de Pastas
 
 ```
@@ -144,9 +143,9 @@ model Series {
 }
 
 
+</details>
+
 ---
-
-
 
 ## 🗺️ Roteiro de Desenvolvimento (10 Fases)
 
@@ -242,5 +241,6 @@ model Series {
 
 1. **Clone o repositório:**
    ```bash
-   git clone [https://github.com/silascunha97/API_Para_treinos.git](https://github.com/silascunha97/API_Para_treinos.git)
+   git clone https://github.com/silascunha97/API_Para_treinos.git
    cd API_Para_treinos
+   ```
