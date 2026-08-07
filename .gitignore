@@ -1,0 +1,59 @@
+# Dependências
+node_modules/
+/.pnp
+.pnp.js
+
+# Build / Compilação (TypeScript/JavaScript)
+dist/
+build/
+*.tsbuildinfo
+
+# Prisma Client gerado (recriado via `npm install` / `prisma generate`)
+src/generated/prisma/
+
+# Arquivos de Ambiente / Segredos (NUNCA suba para o Git)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# Dados Locais do Banco / Docker (caso crie pastas de volume local)
+pgdata/
+postgres-data/
+
+# Testes e Cobertura de Código
+coverage/
+.nyc_output/
+
+# Editores de Código e IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Arquivos do Sistema Operacional
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+/src/generated/prisma

@@ -1,0 +1,55 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Pessoa {
+  id                  Int            @id @default(autoincrement())
+  peso                Decimal?       @db.Decimal(5, 2)
+  altura              Decimal?       @db.Decimal(3, 2)
+  taxaMetabolicaBasal Decimal?       @map("taxa_metabolica_basal") @db.Decimal(6, 2)
+  sessoesTreino       SessaoTreino[]
+
+  @@map("pessoa")
+}
+
+model Exercicio {
+  idExercicio   Int      @id @default(autoincrement()) @map("id_exercicio")
+  nomeExercicio String   @map("nome_exercicio") @db.VarChar(100)
+  grupoMuscular String?  @map("grupo_muscular") @db.VarChar(50)
+  permiteCarga  Boolean  @default(true) @map("permite_carga")
+  series        Series[]
+
+  @@map("exercicio")
+}
+
+model SessaoTreino {
+  idSessao       Int       @id @default(autoincrement()) @map("id_sessao")
+  idPessoa       Int       @map("id_pessoa")
+  dataHoraInicio DateTime  @map("data_hora_inicio") @db.Timestamp(6)
+  dataHoraFim    DateTime? @map("data_hora_fim") @db.Timestamp(6)
+  observacoes    String?
+  series         Series[]
+  pessoa         Pessoa    @relation(fields: [idPessoa], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sessao_pessoa")
+
+  @@map("sessao_treino")
+}
+
+model Series {
+  idSerie        Int          @id @default(autoincrement()) @map("id_serie")
+  idSessao       Int          @map("id_sessao")
+  idExercicio    Int          @map("id_exercicio")
+  numeroSerie    Int          @map("numero_serie")
+  repsRealizadas Int?         @map("reps_realizadas")
+  cargaAdicional Decimal?     @map("carga_adicional") @db.Decimal(5, 2)
+  concluido      Boolean?     @default(false)
+  exercicio      Exercicio    @relation(fields: [idExercicio], references: [idExercicio], onUpdate: NoAction, map: "fk_series_exercicio")
+  sessao         SessaoTreino @relation(fields: [idSessao], references: [idSessao], onDelete: Cascade, onUpdate: NoAction, map: "fk_series_sessao")
+
+  @@map("series")
+}

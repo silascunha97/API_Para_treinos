@@ -1,0 +1,48 @@
+# Dependências locais
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Arquivos de compilação / Build
+dist
+build
+.next
+.nuxt
+
+# Ambientes e Segredos
+.env
+.env.*
+!.env.example
+
+# Controle de Versão (Git)
+.git
+.gitignore
+.github
+
+# Logs e arquivos temporários
+*.log
+logs
+.temp
+.tmp
+
+# Arquivos do sistema operacional e IDEs
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+
+# Arquivos de Teste e Cobertura
+coverage
+__tests__
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+
+# Arquivos de Documentação / Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+README.md

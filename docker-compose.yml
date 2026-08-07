@@ -1,0 +1,44 @@
+services:
+  # --- Banco de Dados PostgreSQL ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: graphql_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d graphql_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- API Express + GraphQL ---
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: graphql_api
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      NODE_ENV: development
+      DATABASE_URL: postgres://postgres:mysecretpassword@postgres:5432/graphql_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Descomente as linhas abaixo para habilitar Live Reload em ambiente de desenvolvimento:
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+
+volumes:
+  pgdata:
+    driver: local
