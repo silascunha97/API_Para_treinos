@@ -14,6 +14,8 @@ model Pessoa {
   altura              Decimal?       @db.Decimal(3, 2)
   taxaMetabolicaBasal Decimal?       @map("taxa_metabolica_basal") @db.Decimal(6, 2)
   sessoesTreino       SessaoTreino[]
+  //email               String         @unique @db.VarChar(100)
+  //password            String         @db.VarChar(100)
 
   @@map("pessoa")
 }

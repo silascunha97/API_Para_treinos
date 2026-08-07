@@ -140,19 +140,19 @@ model Series {
 
 ### 🔹 Fase 5: Mapeamento ORM com Prisma
 
-* [x ] Inicialização do Prisma no projeto (`npx prisma init`).
-* [ ] Mapeamento do `schema.prisma` espelhando as tabelas em `snake_case` com atalhos `@map`.
-* [x] Conexão e sincronização do schema com a base nativa (`npx prisma db pull` ou `npx prisma migrate dev`).
-* [ ] Instanciação singleton do `PrismaClient` na aplicação.
+* [x] Inicialização do Prisma no projeto (`npx prisma init`).
+* [x] Mapeamento do `schema.prisma` espelhando as tabelas em `snake_case` com atalhos `@map`.
+* [X] Conexão e sincronização do schema com a base nativa (`npx prisma db pull` ou `npx prisma migrate dev`).
+* [X] Instanciação singleton do `PrismaClient` na aplicação.
 
 ---
 
 ### 🔹 Fase 6: Arquitetura GraphQL & Servidor Express
 
-* [ ] Integração do Apollo Server v4 com middlewares do Express (`expressMiddleware`).
-* [ ] Estruturação das pastas do projeto (`/graphql`, `/resolvers`, `/typeDefs`, `/services`).
-* [ ] Definição dos Tipos Base no Schema GraphQL (`Pessoa`, `Exercicio`, `SessaoTreino`, `Serie`).
-* [ ] Configuração de tratamento global de erros no GraphQL.
+* [X] Integração do Apollo Server v4 com middlewares do Express (`expressMiddleware`).
+* [X] Estruturação das pastas do projeto (`/graphql`, `/resolvers`, `/typeDefs`, `/services`).
+* [X] Definição dos Tipos Base no Schema GraphQL (`Pessoa`, `Exercicio`, `SessaoTreino`, `Serie`).
+* [X] Configuração de tratamento global de erros no GraphQL.
 
 ---
 
