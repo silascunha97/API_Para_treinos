@@ -5,6 +5,54 @@
 
 ---
 
+````markdown
+## 🏗️ Estrutura de Pastas
+
+```
+
+src/
+├── @types/                     # Declarações e extensões globais de tipos do TypeScript
+├── config/                     # Variáveis de ambiente e constantes da aplicação (env.ts)
+│
+├── domain/                     # 🟢 CAMADA DE DOMÍNIO (Regras de Negócio Puras)
+│   ├── entities/               # Entidades de negócio (ex: Pessoa.ts, Serie.ts)
+│   ├── errors/                 # Erros de domínio customizados (ex: InvalidCargaError.ts)
+│   └── repositories/           # [DIP] Interfaces/Contratos dos Repositórios (IPessoaRepository.ts)
+│
+├── application/                # 🟡 CAMADA DE APLICAÇÃO (Casos de Uso)
+│   ├── dtos/                   # Schemas/Tipos de dados de entrada e saída (Inputs/Outputs)
+│   └── use-cases/              # Lógica da aplicação orquestrada por caso de uso
+│       ├── pessoa/             # Ex: CriarPessoaUseCase.ts, ObterMetabolismoUseCase.ts
+│       ├── treino/             # Ex: IniciarSessaoTreinoUseCase.ts
+│       └── exercicio/          # Ex: CadastrarExercicioUseCase.ts
+│
+├── infrastructure/             # 🔴 CAMADA DE INFRAESTRUTURA (Detalhes e Tecnologias Externas)
+│   ├── database/               # Conexão com o banco, instância do Prisma, Migrations
+│   │   └── prisma/             # Instância do PrismaClient e helpers do ORM
+│   ├── repositories/           # Implementação concreta dos contratos do domínio via Prisma
+│   │   ├── PrismaPessoaRepository.ts
+│   │   └── PrismaSerieRepository.ts
+│   └── services/               # Serviços de terceiros (Loggers, envio de email, APIs externas)
+│
+├── presentation/               # 🔵 CAMADA DE APRESENTAÇÃO (Ponto de Entrada da API)
+│   ├── graphql/                # Apollo Server & GraphQL
+│   │   ├── type-defs/          # Schemas do GraphQL (pessoa.graphql, treino.graphql)
+│   │   ├── resolvers/          # Resolvers HTTP/GraphQL (Apenas delegam para os Use Cases)
+│   │   └── context.ts          # Contexto do Apollo (Sessão, Injeção de repositórios)
+│   ├── http/                   # Controllers e Rotas Express (se houver REST/Healthcheck)
+│   └── middlewares/            # Middlewares Express/GraphQL (Autenticação, Error Handling)
+│
+├── main/                       # ⚪ COMPOSITION ROOT (Injeção de Dependência e Bootstrap)
+│   ├── factories/              # Instanciação e montagem dos UseCases com seus Repositórios
+│   └── server.ts               # Subida do servidor Express + Apollo Server
+│
+└── index.ts                    # Entrypoint de execução
+
+
+```
+
+---
+
 ## 📌 Visão Geral do Projeto
 
 Este repositório abriga a API backend desenvolvida em **Node.js (TypeScript)** com **Express** e **Apollo Server (GraphQL)**, persistida em **PostgreSQL** através do **Prisma ORM**, e containerizada com **Docker**.
