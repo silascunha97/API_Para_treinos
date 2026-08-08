@@ -7,6 +7,8 @@ import { GraphQLContext } from '../../@types/graphql';
 import { formatGraphQLError } from '../errors/formatError';
 import { resolvers } from './resolvers'; // Import actual resolvers
 import { typeDefs } from './typeDefs';
+import { startTreinoWorkers } from '../../infrastructure/workers/treinoMetricsWorker';
+
 
 export async function createGraphQLServer(): Promise<{
   app: Application;
@@ -43,4 +45,13 @@ export async function createGraphQLServer(): Promise<{
   );
 
   return { app, httpServer };
+
+  async function bootstrap() {
+  // Iniciar consumidor de mensagens do RabbitMQ
+  await startTreinoWorkers();
+
+  // Iniciar servidor Apollo / Express
+  console.log('🚀 API de Treinos pronta e operando com RabbitMQ.');
+}
+
 }
