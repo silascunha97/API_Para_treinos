@@ -1,4 +1,46 @@
 export const typeDefs = `#graphql
+
+  # --- AUTENTICAÇÃO E USUÁRIO ---
+  type Usuario {
+    id: ID!
+    nome: String!
+    email: String!
+    idPessoa: ID
+  }
+
+  type AuthPayload {
+    usuario: Usuario!
+    accessToken: String!
+    refreshToken: String!
+  }
+
+  input RegistrarInput {
+    nome: String!
+    email: String!
+    senha: String!
+    idPessoa: Int
+  }
+
+  input LoginInput {
+    email: String!
+    senha: String!
+  }
+
+  # --- QUERIES EXISTENTES ---
+  type Query {
+    healthCheck: String!
+    # ... demais queries
+  }
+
+  # --- MUTATIONS ---
+  type Mutation {
+    # Autenticação
+    registrar(input: RegistrarInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
+
+    # ... demais mutations
+  }
+
   # --- METADADOS E PAGINAÇÃO ---
   type MetaPaginacao {
     totalRegistros: Int!
