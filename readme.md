@@ -44,13 +44,13 @@ A aplicação engloba o ciclo completo de monitoramento de treinos conforme a mo
 ```bash
 # Instalar dependências
 npm install
-
+---
 # Subir banco de dados PostgreSQL via Docker
 docker-compose up -d
-
+---
 # Executar as migrações/push do schema Prisma
 npx prisma db push
-
+---
 ## 🏗️ Estrutura de Pastas
 
 ```
@@ -94,7 +94,6 @@ src/
 └── index.ts                    # Entrypoint de execução
 
 
-```
 
 ---
 
