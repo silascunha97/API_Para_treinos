@@ -1,291 +1,617 @@
-# 🚀 Workout Tracker API (Express + GraphQL + PostgreSQL + Prisma)
+# 🏋️ Workout Tracker API
 
-> **Documentação Viva & Roteiro de Concepção**  
-> Sistema de rastreamento de treinos de alta performance, focado em progressão de carga, volume semanal e análise estética/estrutural.
+> **API backend para gerenciamento, acompanhamento e análise da evolução de treinos.**
 
----
+O **Workout Tracker API** é um projeto backend desenvolvido para substituir planilhas estáticas por uma plataforma estruturada para registro de **sessões de treino, exercícios, séries, repetições e cargas**.
 
-## 🚀 MVP Release v1.0.0 — API para Treinos
-
-Esta Pull Request entrega o **MVP (Minimum Viable Product)** da API de Treinos. A aplicação foi desenvolvida aplicando os princípios de **Clean Architecture**, **Domain-Driven Design (DDD)**, e integração entre **GraphQL (Apollo Server v4)**, **Express** e **Prisma ORM** com banco de dados **PostgreSQL**.
+O projeto foi concebido com foco em **separação de responsabilidades, modelagem de domínio e escalabilidade**, utilizando **Clean Architecture**, conceitos de **Domain-Driven Design (DDD)** e uma API baseada em **GraphQL**.
 
 ---
 
-## 📋 Entidades do Domínio e Relacionamentos Implementados
+## 🎯 Objetivo
 
-A aplicação engloba o ciclo completo de monitoramento de treinos conforme a modelagem de domínio:
+O projeto nasceu de um problema simples: planilhas conseguem armazenar dados de treino, mas dificultam a evolução para análises mais inteligentes.
 
-* 👤 **Pessoa:** Armazena perfil físico e métricas do atleta (`peso`, `altura`, `taxaMetabolicaBasal`).
-* 🏋️ **Exercicio:** Catálogo de exercícios com suporte a grupos musculares e flag de carga adicional (`permiteCarga`).
-* ⏱️ **SessaoTreino:** Gerencia o ciclo de treino iniciado por uma pessoa (`dataHoraInicio`, `dataHoraFim`, `observacoes`).
-* 🔢 **Serie:** Registra o progresso de cada exercício executado dentro de uma sessão (`numeroSerie`, `repsRealizadas`, `cargaAdicional`, `concluido`).
+A proposta é transformar o histórico de treino em dados estruturados que possam posteriormente ser utilizados para acompanhar:
 
----
+* 📈 Progressão de carga;
+* 💪 Evolução de força;
+* 🔢 Volume semanal;
+* 🏋️ Histórico de exercícios;
+* ⏱️ Sessões de treinamento;
+* 📊 Métricas de desempenho;
+* 🔥 Indicadores relacionados ao gasto metabólico.
 
-## 🏗️ Destaques da Arquitetura
-
-1. **Clean Architecture / Camadas Isoladas:**
-   * `/domain`: Entidades puras e contratos dos repositórios (`IBaseRepository`, `IPessoaRepository`, etc.).
-   * `/application`: DTOs de entrada/saída e Casos de Uso (`Use Cases`) isolando as regras de negócio.
-   * `/infrastructure`: Instância *Singleton* do `PrismaClient` para evitar *connection leaks* e implementação concreta dos repositórios.
-   * `/presentation`: Schemas GraphQL (`typeDefs`), Resolvers e Middleware de formatação/sanitização global de erros (`formatError`).
-   * `/main`: Injeção de dependências (*Factories*) e inicialização do servidor HTTP/GraphQL (`app.ts`).
-
-2. **GraphQL SDL & Express:**
-   * Apollo Server v4 acoplado ao Express via `expressMiddleware`.
-   * Paginação genérica via *wrappers* GraphQL (`MetaPaginacao`, `PaginaPessoas`).
-   * Validação rigorosa de *inputs* e tipagem forte nos schemas.
+A arquitetura foi pensada para permitir que novas regras de negócio e métricas sejam adicionadas sem acoplar o domínio às tecnologias utilizadas na infraestrutura.
 
 ---
 
-## 🧪 Como Testar o MVP
+## ✨ Principais Características
 
-### 1. Subir a Infraestrutura Local
-```bash
-# Instalar dependências
-npm install
----
-# Subir banco de dados PostgreSQL via Docker
-docker-compose up -d
----
-# Executar as migrações/push do schema Prisma
-npx prisma db push
----
-## 🏗️ Estrutura de Pastas
+* [x] Modelagem conceitual do domínio;
+* [x] Modelo Entidade-Relacionamento (MER);
+* [x] Modelo relacional;
+* [x] PostgreSQL containerizado;
+* [x] Prisma ORM;
+* [x] TypeScript;
+* [x] Estrutura baseada em Clean Architecture;
+* [x] Separação entre domínio, aplicação e infraestrutura;
+* [x] Contratos de repositórios;
+* [ ] Queries GraphQL;
+* [ ] Mutations GraphQL;
+* [ ] Testes automatizados;
+* [ ] Métricas avançadas;
+* [ ] Pipeline CI/CD;
+* [ ] Deploy em ambiente Cloud.
 
+---
+
+## 🧠 Arquitetura
+
+A aplicação utiliza uma organização inspirada em **Clean Architecture**, buscando manter as regras de negócio independentes de frameworks e detalhes de infraestrutura.
+
+```text
+┌─────────────────────────────────────────────────────┐
+│                    Presentation                      │
+│            GraphQL / Express / Middleware            │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────┐
+│                    Application                       │
+│                DTOs / Use Cases                      │
+└──────────────────────────┬──────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────┐
+│                       Domain                         │
+│        Entities / Errors / Repository Contracts     │
+└──────────────────────────┬──────────────────────────┘
+                           ▲
+                           │
+┌──────────────────────────┴──────────────────────────┐
+│                   Infrastructure                     │
+│             Prisma / PostgreSQL / Services          │
+└─────────────────────────────────────────────────────┘
 ```
 
+### Por que essa separação?
+
+A principal preocupação arquitetural é evitar que regras de negócio dependam diretamente de:
+
+* Prisma;
+* PostgreSQL;
+* Express;
+* Apollo Server;
+* detalhes de infraestrutura.
+
+Dessa forma, os **Use Cases** podem depender de contratos definidos pelo domínio, enquanto a infraestrutura fornece as implementações concretas.
+
+---
+
+## 📂 Estrutura
+
+```text
 src/
-├── @types/                     # Declarações e extensões globais de tipos do TypeScript
-├── config/                     # Variáveis de ambiente e constantes da aplicação (env.ts)
 │
-├── domain/                     # 🟢 CAMADA DE DOMÍNIO (Regras de Negócio Puras)
-│   ├── entities/               # Entidades de negócio (ex: Pessoa.ts, Serie.ts)
-│   ├── errors/                 # Erros de domínio customizados (ex: InvalidCargaError.ts)
-│   └── repositories/           # [DIP] Interfaces/Contratos dos Repositórios (IPessoaRepository.ts)
+├── @types/
+├── config/
 │
-├── application/                # 🟡 CAMADA DE APLICAÇÃO (Casos de Uso)
-│   ├── dtos/                   # Schemas/Tipos de dados de entrada e saída (Inputs/Outputs)
-│   └── use-cases/              # Lógica da aplicação orquestrada por caso de uso
-│       ├── pessoa/             # Ex: CriarPessoaUseCase.ts, ObterMetabolismoUseCase.ts
-│       ├── treino/             # Ex: IniciarSessaoTreinoUseCase.ts
-│       └── exercicio/          # Ex: CadastrarExercicioUseCase.ts
+├── domain/
+│   ├── entities/
+│   ├── errors/
+│   └── repositories/
 │
-├── infrastructure/             # 🔴 CAMADA DE INFRAESTRUTURA (Detalhes e Tecnologias Externas)
-│   ├── database/               # Conexão com o banco, instância do Prisma, Migrations
-│   │   └── prisma/             # Instância do PrismaClient e helpers do ORM
-│   ├── repositories/           # Implementação concreta dos contratos do domínio via Prisma
-│   │   ├── PrismaPessoaRepository.ts
-│   │   └── PrismaSerieRepository.ts
-│   └── services/               # Serviços de terceiros (Loggers, envio de email, APIs externas)
+├── application/
+│   ├── dtos/
+│   └── use-cases/
+│       ├── pessoa/
+│       ├── treino/
+│       └── exercicio/
 │
-├── presentation/               # 🔵 CAMADA DE APRESENTAÇÃO (Ponto de Entrada da API)
-│   ├── graphql/                # Apollo Server & GraphQL
-│   │   ├── type-defs/          # Schemas do GraphQL (pessoa.graphql, treino.graphql)
-│   │   ├── resolvers/          # Resolvers HTTP/GraphQL (Apenas delegam para os Use Cases)
-│   │   └── context.ts          # Contexto do Apollo (Sessão, Injeção de repositórios)
-│   ├── http/                   # Controllers e Rotas Express (se houver REST/Healthcheck)
-│   └── middlewares/            # Middlewares Express/GraphQL (Autenticação, Error Handling)
+├── infrastructure/
+│   ├── database/
+│   │   └── prisma/
+│   ├── repositories/
+│   └── services/
 │
-├── main/                       # ⚪ COMPOSITION ROOT (Injeção de Dependência e Bootstrap)
-│   ├── factories/              # Instanciação e montagem dos UseCases com seus Repositórios
-│   └── server.ts               # Subida do servidor Express + Apollo Server
+├── presentation/
+│   ├── graphql/
+│   │   ├── type-defs/
+│   │   ├── resolvers/
+│   │   └── context.ts
+│   ├── http/
+│   └── middlewares/
 │
-└── index.ts                    # Entrypoint de execução
+├── main/
+│   ├── factories/
+│   └── server.ts
+│
+└── index.ts
+```
 
+### Responsabilidade das camadas
 
+| Camada           | Responsabilidade                           |
+| ---------------- | ------------------------------------------ |
+| `domain`         | Regras de negócio, entidades e contratos   |
+| `application`    | Casos de uso e DTOs                        |
+| `infrastructure` | Persistência e serviços externos           |
+| `presentation`   | GraphQL, HTTP e middleware                 |
+| `main`           | Composição de dependências e inicialização |
 
 ---
 
-## 📌 Visão Geral do Projeto
+## 🧩 Domínio
 
-Este repositório abriga a API backend desenvolvida em **Node.js (TypeScript)** com **Express** e **Apollo Server (GraphQL)**, persistida em **PostgreSQL** através do **Prisma ORM**, e containerizada com **Docker**.
+O domínio atual é composto por quatro conceitos principais:
 
-O objetivo do sistema é substituir planilhas estáticas por um acompanhamento dinâmico de séries, cargas e volumes para treinos de calistenia/musculação, permitindo mensurar a progressão real de força em relação ao ganho de massa.
+```text
+Pessoa
+   │
+   │ 1:N
+   ▼
+SessaoTreino
+   │
+   │ 1:N
+   ▼
+Series
+   │
+   │ N:1
+   ▼
+Exercicio
+```
+
+### 👤 Pessoa
+
+Representa o usuário/atleta e mantém informações físicas utilizadas pelo sistema.
+
+Principais dados:
+
+* `peso`;
+* `altura`;
+* `taxaMetabolicaBasal`.
+
+### 🏋️ Exercicio
+
+Representa o catálogo de exercícios disponíveis.
+
+Principais dados:
+
+* `nomeExercicio`;
+* `grupoMuscular`;
+* `permiteCarga`.
+
+### ⏱️ SessaoTreino
+
+Representa uma sessão de treinamento realizada por uma pessoa.
+
+Principais dados:
+
+* `dataHoraInicio`;
+* `dataHoraFim`;
+* `observacoes`.
+
+### 🔢 Series
+
+Representa a execução individual de um exercício dentro de uma sessão.
+
+Principais dados:
+
+* `numeroSerie`;
+* `repsRealizadas`;
+* `cargaAdicional`;
+* `concluido`.
 
 ---
 
-## 🛠️ Tech Stack
+## 🗄️ Persistência
 
-| Categoria | Tecnologia |
-| :--- | :--- |
-| **Runtime & Linguagem** | Node.js (v20+) / TypeScript |
-| **Framework Web & API** | Express.js / Apollo Server 4 (GraphQL) |
-| **Banco de Dados & ORM** | PostgreSQL 16 / Prisma ORM |
-| **Containerização** | Docker / Docker Compose |
-| **Tooling & Dev** | `ts-node`, `nodemon`, DBeaver |
+A persistência utiliza **PostgreSQL + Prisma ORM**.
 
+O projeto utiliza `@map` e `@@map` para manter uma separação entre a convenção utilizada no código e a convenção utilizada no banco:
 
----
+```text
+TypeScript
+camelCase
+    │
+    ▼
+Prisma @map / @@map
+    │
+    ▼
+PostgreSQL
+snake_case
+```
 
-## 🗄️ Modelagem de Dados (Prisma Schema)
-
-O esquema do banco reflete o relacionamento relacional entre usuários (`Pessoa`), catálogo de exercícios (`Exercicio`), sessões executadas (`SessaoTreino`) e as séries individuais (`Series`). 
-
-Utilizamos `@map` e `@@map` para preservar o padrão `snake_case` no banco físico mantendo a convenção `camelCase` no ecossistema TypeScript:
-
-<details open>
-<summary><b>Clique para ver o arquivo <code>prisma/schema.prisma</code></b></summary>
+Exemplo:
 
 ```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+taxaMetabolicaBasal Decimal?
+  @map("taxa_metabolica_basal")
+```
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-model Pessoa {
-  id                  Int            @id @default(autoincrement())
-  peso                Decimal?       @db.Decimal(5, 2)
-  altura              Decimal?       @db.Decimal(3, 2)
-  taxaMetabolicaBasal Decimal?       @map("taxa_metabolica_basal") @db.Decimal(6, 2)
-  sessoesTreino       SessaoTreino[]
-
-  @@map("pessoa")
-}
-
-model Exercicio {
-  idExercicio   Int      @id @default(autoincrement()) @map("id_exercicio")
-  nomeExercicio String   @map("nome_exercicio") @db.VarChar(100)
-  grupoMuscular String?  @map("grupo_muscular") @db.VarChar(50)
-  permiteCarga  Boolean  @default(true) @map("permite_carga")
-  series        Series[]
-
-  @@map("exercicio")
-}
-
-model SessaoTreino {
-  idSessao        Int       @id @default(autoincrement()) @map("id_sessao")
-  idPessoa        Int       @map("id_pessoa")
-  dataHoraInicio  DateTime  @map("data_hora_inicio") @db.Timestamp()
-  dataHoraFim     DateTime? @map("data_hora_fim") @db.Timestamp()
-  observacoes     String?   @db.Text
-
-  // Relacionamentos
-  pessoa Pessoa   @relation(fields: [idPessoa], references: [id], onDelete: Cascade)
-  series Series[]
-
-  @@map("sessao_treino")
-}
-
-model Series {
-  idSerie        Int      @id @default(autoincrement()) @map("id_serie")
-  idSessao       Int      @map("id_sessao")
-  idExercicio    Int      @map("id_exercicio")
-  numeroSerie    Int      @map("numero_serie")
-  repsRealizadas Int?     @map("reps_realizadas")
-  cargaAdicional Decimal? @map("carga_adicional") @db.Decimal(5, 2)
-  concluido      Boolean? @default(false)
-
-  // Relacionamentos
-  sessao    SessaoTreino @relation(fields: [idSessao], references: [idSessao], onDelete: Cascade)
-  exercicio Exercicio    @relation(fields: [idExercicio], references: [idExercicio], onDelete: Restrict)
-
-  @@map("series")
-}
-
-
-</details>
+Isso permite manter a legibilidade e convenções do TypeScript sem abrir mão de uma convenção consistente no banco de dados.
 
 ---
 
-## 🗺️ Roteiro de Desenvolvimento (10 Fases)
+## 🛠️ Stack
+
+| Categoria       | Tecnologia            |
+| --------------- | --------------------- |
+| Runtime         | Node.js 20+           |
+| Linguagem       | TypeScript            |
+| API             | GraphQL               |
+| GraphQL Server  | Apollo Server 4       |
+| HTTP            | Express.js            |
+| Banco de dados  | PostgreSQL 16         |
+| ORM             | Prisma                |
+| Containerização | Docker                |
+| Orquestração    | Docker Compose        |
+| Desenvolvimento | `ts-node` / `nodemon` |
+| Database GUI    | DBeaver               |
 
 ---
 
-### 🔹 Fase 1: Modelagem Conceitual & Regras de Negócio
-- [x] Definição dos requisitos funcionais (checklist de treino, registro de carga, volume).
-- [x] Criação do Modelo Entidade-Relacionamento (MER) em notação de Peter Chen (brModelo).
-- [x] Mapeamento das entidades principais: `Pessoa`, `Exercicio`, `SessaoTreino` e `Serie`.
-- [x] Validação das cardinalidades ($1:1$, $1:N$, $0:N$) para garantir histórico dinâmico.
+## 🐳 Ambiente de Desenvolvimento
 
----
-
-### 🔹 Fase 2: Modelagem Lógica e Estruturação SQL
-- [x] Conversão do MER para o Modelo Relacional (Diagrama EER).
-- [x] Criação dos scripts DDL (`CREATE TABLE`) com chave primária auto-incremental (`IDENTITY`).
-- [x] Configuração de chaves estrangeiras com restrições (`ON DELETE CASCADE` / `RESTRICT`).
-- [x] Testes de inserção e integridade referencial via DBeaver.
-
----
-
-### 🔹 Fase 3: Infraestrutura Docker & Ambiente de Banco
-- [x] Criação do `Dockerfile` multi-stage build otimizado com Node.js Alpine.
-- [x] Configuração do `docker-compose.yml` para os serviços de API e PostgreSQL.
-- [x] Criação dos arquivos `.dockerignore` e `.env` para gestão de variáveis sensíveis.
-- [x] Configuração do *healthcheck* para garantir que a API só conecte ao banco pronto.
-
----
-
-### 🔹 Fase 4: Setup do Projeto Node.js & TypeScript
-- [x] Inicialização do repositório (`npm init -y`) e controle de versão (`.gitignore`).
-- [x] Instalação do TypeScript, `ts-node`, `nodemon` e tipagens (`@types/*`).
-- [x] Ajuste fino do `tsconfig.json` para compilação estrita em `CommonJS/ES2022`.
-- [x] Criação dos scripts de desenvolvimento (`npm run dev`) e build de produção (`npm run build`).
-
----
-
-### 🔹 Fase 5: Mapeamento ORM com Prisma
-- [x] Inicialização do Prisma no projeto (`npx prisma init`).
-- [x] Mapeamento do `schema.prisma` espelhando as tabelas em `snake_case` com atalhos `@map`.
-- [x] Conexão e sincronização do schema com a base nativa (`npx prisma db pull` ou `npx prisma migrate dev`).
-- [ ] Instanciação singleton do `PrismaClient` na aplicação.
-
----
-
-### 🔹 Fase 6: Arquitetura GraphQL & Servidor Express
-- [ ] Integração do Apollo Server v4 com middlewares do Express (`expressMiddleware`).
-- [ ] Estruturação das pastas do projeto (`/graphql`, `/resolvers`, `/typeDefs`, `/services`).
-- [ ] Definição dos Tipos Base no Schema GraphQL (`Pessoa`, `Exercicio`, `SessaoTreino`, `Serie`).
-- [ ] Configuração de tratamento global de erros no GraphQL.
-
----
-
-### 🔹 Fase 7: Implementação das Mutações & Queries (CRUD)
-- [ ] **Queries:** Consulta de catálogo de exercícios, histórico de sessões por pessoa e resumo por data.
-- [ ] **Mutations:** Cadastro de usuário, criação de sessão de treino e inserção de séries concluídas.
-- [ ] Validação de entradas (inputs sanitizados) e checagem de tipos GraphQL.
-- [ ] Testes de execução das operações via Apollo Sandbox (`http://localhost:4000/graphql`).
-
----
-
-### 🔹 Fase 8: Regras de Negócio Avançadas & Métricas
-- [ ] Implementação do cálculo automático do **Volume Total de Carga** ($\text{Séries} \times \text{Reps} \times \text{Carga}$).
-- [ ] Algoritmo de linha de tendência para diferenciar hipertrofia real de *pump* temporário.
-- [ ] Endpoint/Resolver para cálculo ajustado de gasto calórico/metabólico.
-- [ ] Lógica para acompanhamento de progressão no treino de rua/calistenia.
-
----
-
-### 🔹 Fase 9: Testes Automatizados & Qualidade de Código
-- [ ] Configuração do ambiente de testes (Jest / Supertest).
-- [ ] Escrita de testes unitários para a lógica de cálculo de volume e regras de negócio.
-- [ ] Testes de integração para as rotas GraphQL e banco de dados isolado em container de testes.
-- [ ] Padronização de código com ESLint e Prettier.
-
----
-
-### 🔹 Fase 10: Concepção do Projeto, CI/CD & Deploy
-- [ ] Configuração de pipelines de integração contínua (GitHub Actions).
-- [ ] Geração da imagem final de produção via Docker Hub ou Container Registry.
-- [ ] Deploy do banco PostgreSQL e da API Express/GraphQL em ambiente Cloud.
-- [ ] Monitoramento, logs de execução e encerramento do primeiro ciclo de release.
-
----
-
-## 🚀 Como Rodar o Projeto Localmente
+O PostgreSQL é executado através de Docker, permitindo reproduzir o ambiente de desenvolvimento sem depender de uma instalação local do banco.
 
 ### Pré-requisitos
-* **Docker** e **Docker Compose** instalados.
-* **Node.js** (v20 ou superior) instalado localmente.
 
-### Passos
+* Node.js `20+`;
+* npm;
+* Docker;
+* Docker Compose.
 
-1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/silascunha97/API_Para_treinos.git
-   cd API_Para_treinos
-   ```
+### Clone
+
+```bash
+git clone https://github.com/silascunha97/API_Para_treinos.git
+
+cd API_Para_treinos
+```
+
+### Instale as dependências
+
+```bash
+npm install
+```
+
+### Configure as variáveis de ambiente
+
+Crie um arquivo `.env`:
+
+```env
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/workout_tracker"
+```
+
+> Ajuste a URL conforme a configuração utilizada no `docker-compose.yml`.
+
+### Suba a infraestrutura
+
+```bash
+docker-compose up -d
+```
+
+Verifique os containers:
+
+```bash
+docker-compose ps
+```
+
+### Sincronize o schema
+
+```bash
+npx prisma db push
+```
+
+### Execute a aplicação
+
+```bash
+npm run dev
+```
+
+---
+
+## 📊 Modelo de Dados
+
+A estrutura atual do banco pode ser resumida da seguinte maneira:
+
+```text
+┌──────────────┐
+│    Pessoa    │
+├──────────────┤
+│ id           │
+│ peso         │
+│ altura       │
+│ taxaMetab... │
+└──────┬───────┘
+       │
+       │ 1:N
+       ▼
+┌──────────────────┐
+│   SessaoTreino   │
+├──────────────────┤
+│ idSessao         │
+│ idPessoa         │
+│ dataHoraInicio   │
+│ dataHoraFim      │
+│ observacoes      │
+└────────┬─────────┘
+         │
+         │ 1:N
+         ▼
+┌──────────────────┐       N:1       ┌────────────────┐
+│      Series      │─────────────────│    Exercicio   │
+├──────────────────┤                 ├────────────────┤
+│ idSerie          │                 │ idExercicio    │
+│ idSessao         │                 │ nomeExercicio  │
+│ idExercicio      │                 │ grupoMuscular  │
+│ numeroSerie      │                 │ permiteCarga   │
+│ repsRealizadas   │                 └────────────────┘
+│ cargaAdicional   │
+│ concluido        │
+└──────────────────┘
+```
+
+---
+
+## 📐 Decisões Arquiteturais
+
+### Repository Pattern
+
+O domínio define contratos para os repositórios, enquanto a infraestrutura fornece as implementações.
+
+```text
+Domain
+   │
+   └── IPessoaRepository
+             ▲
+             │ implements
+             │
+Infrastructure
+   │
+   └── PrismaPessoaRepository
+```
+
+Isso reduz o acoplamento entre os casos de uso e o mecanismo de persistência.
+
+### Use Cases
+
+As operações da aplicação são organizadas em casos de uso, evitando concentrar regras de negócio diretamente nos resolvers.
+
+Exemplos planejados:
+
+```text
+CriarPessoaUseCase
+ObterMetabolismoUseCase
+IniciarSessaoTreinoUseCase
+CadastrarExercicioUseCase
+```
+
+### GraphQL
+
+O GraphQL será utilizado como camada de apresentação da API, permitindo estruturar queries e mutations de acordo com as necessidades do cliente.
+
+O endpoint planejado para desenvolvimento é:
+
+```text
+http://localhost:4000/graphql
+```
+
+---
+
+# 📈 Roadmap
+
+## 01 — Modelagem
+
+* [x] Requisitos funcionais;
+* [x] Modelo Entidade-Relacionamento;
+* [x] Modelo relacional;
+* [x] Cardinalidades;
+* [x] Definição das entidades.
+
+## 02 — Banco de Dados
+
+* [x] PostgreSQL;
+* [x] DDL;
+* [x] Chaves primárias;
+* [x] Chaves estrangeiras;
+* [x] Integridade referencial;
+* [x] Prisma Schema.
+
+## 03 — Infraestrutura
+
+* [x] Dockerfile;
+* [x] Docker Compose;
+* [x] PostgreSQL containerizado;
+* [x] `.dockerignore`;
+* [x] Variáveis de ambiente;
+* [x] Healthcheck.
+
+## 04 — Backend
+
+* [x] Node.js;
+* [x] TypeScript;
+* [x] Configuração do projeto;
+* [x] Estrutura arquitetural;
+* [ ] Implementação completa dos Use Cases;
+* [ ] Implementação dos resolvers.
+
+## 05 — GraphQL
+
+* [ ] Apollo Server;
+* [ ] TypeDefs;
+* [ ] Queries;
+* [ ] Mutations;
+* [ ] Validação de inputs;
+* [ ] Tratamento global de erros.
+
+## 06 — Métricas
+
+* [ ] Volume total de carga;
+* [ ] Progressão de força;
+* [ ] Histórico de desempenho;
+* [ ] Indicadores metabólicos;
+* [ ] Análise de progressão.
+
+### Fórmula inicial
+
+```text
+Volume Total = Séries × Repetições × Carga
+```
+
+## 07 — Qualidade
+
+* [ ] Jest;
+* [ ] Supertest;
+* [ ] Testes unitários;
+* [ ] Testes de integração;
+* [ ] ESLint;
+* [ ] Prettier.
+
+## 08 — DevOps
+
+* [ ] GitHub Actions;
+* [ ] CI;
+* [ ] Build de imagem de produção;
+* [ ] Container Registry;
+* [ ] Deploy;
+* [ ] Monitoramento;
+* [ ] Logs.
+
+---
+
+# 🧪 Testes
+
+A estratégia de testes planejada contempla diferentes níveis:
+
+```text
+                  ┌───────────────────┐
+                  │ Integration Tests │
+                  └─────────┬─────────┘
+                            │
+                  ┌─────────▼─────────┐
+                  │   GraphQL / API   │
+                  └─────────┬─────────┘
+                            │
+                  ┌─────────▼─────────┐
+                  │    Use Cases      │
+                  └─────────┬─────────┘
+                            │
+                  ┌─────────▼─────────┐
+                  │  Domain / Rules   │
+                  └───────────────────┘
+```
+
+A cobertura será expandida conforme as funcionalidades do MVP forem implementadas.
+
+---
+
+# 🚧 Status
+
+**Em desenvolvimento — MVP**
+
+O projeto está sendo desenvolvido de maneira incremental, partindo da modelagem do domínio e infraestrutura para posteriormente avançar para regras de negócio, API GraphQL, testes automatizados e CI/CD.
+
+### Progresso atual
+
+```text
+Modelagem              ████████████████████ 100%
+Infraestrutura         ████████████████████ 100%
+Node.js + TypeScript   ████████████████████ 100%
+Prisma                 ███████████████████░  90%
+GraphQL                █████░░░░░░░░░░░░░░░  25%
+CRUD                   ░░░░░░░░░░░░░░░░░░░░   0%
+Métricas               ░░░░░░░░░░░░░░░░░░░░   0%
+Testes                 ░░░░░░░░░░░░░░░░░░░░   0%
+CI/CD                  ░░░░░░░░░░░░░░░░░░░░   0%
+```
+
+---
+
+# 🎓 Objetivos Técnicos
+
+Este projeto também funciona como laboratório prático para aprofundar conhecimentos em:
+
+* Arquitetura de software;
+* Clean Architecture;
+* Domain-Driven Design;
+* Modelagem de dados;
+* PostgreSQL;
+* Prisma ORM;
+* GraphQL;
+* TypeScript;
+* Docker;
+* Testes automatizados;
+* CI/CD;
+* DevOps.
+
+---
+
+# 🔭 Próximos Passos
+
+A evolução planejada segue esta ordem:
+
+```text
+Modelagem
+    ↓
+Persistência
+    ↓
+Use Cases
+    ↓
+GraphQL
+    ↓
+CRUD
+    ↓
+Regras de negócio
+    ↓
+Métricas
+    ↓
+Testes
+    ↓
+CI/CD
+    ↓
+Deploy
+```
+
+---
+
+## 📄 Licença
+
+O projeto está atualmente em desenvolvimento e ainda não possui uma licença pública definida.
+
+---
+
+<div align="center">
+
+**Workout Tracker API**
+
+Backend desenvolvido com TypeScript, GraphQL, Prisma e PostgreSQL.
+
+</div>
+
+### O que eu mudaria em relação ao README anterior
+
+Para **portfólio**, eu evitaria vender o projeto simplesmente como "API de treinos". O ponto mais interessante para um recrutador técnico é a **engenharia por trás dele**: você está usando o domínio de treino como problema para demonstrar modelagem, arquitetura, persistência, API e posteriormente CI/CD.
+
+Também fiz uma escolha importante: **não coloquei badges falsos de build, coverage, versão ou deploy**. Eles ficam ótimos em README, mas só devem entrar quando essas coisas realmente existirem.
+
+Quando o projeto avançar, eu adicionaria no topo algo como:
+
+```text
+[Node.js] [TypeScript] [GraphQL] [PostgreSQL] [Prisma] [Docker] [CI]
+```
+
+e, depois que houver implementação real:
+
+```text
+Build     ✓
+Tests     ✓
+Coverage  87%
+CI        ✓
+Docker    ✓
+Deploy    ✓
+```
+
+Isso deixa o README muito mais convincente porque o candidato não está apenas **afirmando** que conhece determinada tecnologia — o próprio repositório passa a servir como evidência.
