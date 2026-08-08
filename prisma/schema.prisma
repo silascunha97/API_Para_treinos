@@ -8,12 +8,57 @@ datasource db {
   provider = "postgresql"
 }
 
+model Usuario {
+  id              Int            @id @default(autoincrement())
+  nome            String         @db.VarChar(100)
+  email           String         @unique @db.VarChar(100)
+  senha           String?        @db.VarChar(255)
+  avatarUrl       String?        @map("avatar_url")
+  emailVerificado Boolean        @default(false) @map("email_verificado")
+  idPessoa        Int?           @unique @map("id_pessoa")
+  criadoEm        DateTime       @default(now()) @map("criado_em")
+  atualizadoEm    DateTime       @updatedAt @map("atualizado_em")
+  contas          Conta[]
+  refreshTokens   RefreshToken[]
+  pessoa          Pessoa?        @relation(fields: [idPessoa], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuario_pessoa")
+
+  @@map("usuario")
+}
+
+model Conta {
+  id                Int                  @id @default(autoincrement())
+  idUsuario         Int                  @map("id_usuario")
+  provedor          ProvedorAutenticacao
+  provedorAccountId String               @map("provedor_account_id")
+  accessToken       String?              @map("access_token")
+  refreshToken      String?              @map("refresh_token")
+  expiresAt         Int?                 @map("expires_at")
+  criadoEm          DateTime             @default(now()) @map("criado_em")
+  usuario           Usuario              @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@unique([provedor, provedorAccountId])
+  @@map("conta")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique @map("token_hash")
+  idUsuario Int      @map("id_usuario")
+  expiraEm  DateTime @map("expira_em")
+  revogado  Boolean  @default(false)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+  usuario   Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("refresh_token")
+}
+
 model Pessoa {
   id                  Int            @id @default(autoincrement())
   peso                Decimal?       @db.Decimal(5, 2)
   altura              Decimal?       @db.Decimal(3, 2)
   taxaMetabolicaBasal Decimal?       @map("taxa_metabolica_basal") @db.Decimal(6, 2)
   sessoesTreino       SessaoTreino[]
+  usuario             Usuario?
 
   @@map("pessoa")
 }
@@ -52,4 +97,10 @@ model Series {
   sessao         SessaoTreino @relation(fields: [idSessao], references: [idSessao], onDelete: Cascade, onUpdate: NoAction, map: "fk_series_sessao")
 
   @@map("series")
+}
+
+enum ProvedorAutenticacao {
+  LOCAL
+  GOOGLE
+  GITHUB
 }

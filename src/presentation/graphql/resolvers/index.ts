@@ -1,7 +1,9 @@
 import { pessoaResolvers } from './pessoaResolvers';
+import { authResolvers } from './authResolvers';
 
 export const resolvers = {
   Query: {
+    healthCheck: async () => 'API is healthy',
     ...('Query' in pessoaResolvers ? pessoaResolvers.Query : {}),
     obterExercicioPorId: async () => null,
     listarExercicios: async () => [],
@@ -9,6 +11,7 @@ export const resolvers = {
     listarSeriesPorSessao: async () => [],
   },
   Mutation: {
+    ...authResolvers.Mutation,
     ...('Mutation' in pessoaResolvers ? pessoaResolvers.Mutation : {}),
     criarExercicio: async () => null,
     iniciarSessao: async () => null,
