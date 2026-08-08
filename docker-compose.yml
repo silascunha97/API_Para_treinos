@@ -1,44 +1,82 @@
 services:
+
   # --- Banco de Dados PostgreSQL ---
   postgres:
     image: postgres:16-alpine
     container_name: postgres_db
     restart: always
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: graphql_db
+
     ports:
       - "5433:5432"
+
     volumes:
       - pgdata:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d graphql_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    container_name: api_treinos_redis
+    restart: always
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis_data:/data
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: api_treinos_rabbitmq
+    ports:
+      - "5672:5672"   # Porta do protocolo AMQP (mensageria)
+      - "15672:15672" # Porta da interface gráfica web (Management Plugin)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
   # --- API Express + GraphQL ---
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: graphql_api
-    restart: always
-    ports:
-      - "4000:4000"
+
+    container_name: api_treinos
+    restart: unless-stopped
+
     environment:
       PORT: 4000
       NODE_ENV: development
-      DATABASE_URL: postgres://postgres:mysecretpassword@postgres:5432/graphql_db
+      DATABASE_URL: postgresql://postgres:mysecretpassword@postgres:5432/graphql_db
+      REDIS_URL: redis://redis:6379
+
     depends_on:
       postgres:
         condition: service_healthy
-    # Descomente as linhas abaixo para habilitar Live Reload em ambiente de desenvolvimento:
+      redis:
+        condition: service_started
+
+    ports:
+      - "4000:4000"
+
+    # Descomente para habilitar Live Reload em desenvolvimento:
     # volumes:
     #   - .:/app
     #   - /app/node_modules
 
+
+# --- Volumes persistentes ---
 volumes:
   pgdata:
+    driver: local
+
+  redis_data:
     driver: local

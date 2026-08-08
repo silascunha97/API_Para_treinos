@@ -1,3 +1,4 @@
+import { IContaRepository } from '@src/domain/repositories/IContaRepository';
 import { CreatePessoaDTO, UpdatePessoaDTO } from '../../domain/dtos/PessoaDTOs';
 import { IPessoa } from '../../domain/entities/Pessoa';
 import { IPessoaRepository } from '../../domain/repositories/IPessoaRepository';
@@ -5,6 +6,7 @@ import { Pessoa as PrismaPessoa } from '../../generated/prisma/client';
 import { prisma } from '../database/prisma/prismaClient';
 
 export class PrismaPessoaRepository implements IPessoaRepository {
+
   async findById(id: number): Promise<IPessoa | null> {
     const pessoa = await prisma.pessoa.findUnique({ where: { id } });
 

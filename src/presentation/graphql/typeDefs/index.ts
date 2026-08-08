@@ -1,5 +1,16 @@
 export const typeDefs = `#graphql
 
+  input AutenticarGoogleInput {
+  idToken: String!
+  }
+
+  type Mutation {
+    registrar(input: RegistrarInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
+    autenticarComGoogle(input: AutenticarGoogleInput!): AuthPayload!
+  }
+
+
   # --- AUTENTICAÇÃO E USUÁRIO ---
   type Usuario {
     id: ID!
