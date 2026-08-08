@@ -4,7 +4,9 @@
 
 O **Workout Tracker API** é um projeto backend desenvolvido para substituir planilhas estáticas por uma plataforma estruturada para registro de **sessões de treino, exercícios, séries, repetições e cargas**.
 
-O projeto foi concebido com foco em **separação de responsabilidades, modelagem de domínio e escalabilidade**, utilizando **Clean Architecture**, conceitos de **Domain-Driven Design (DDD)** e uma API baseada em **GraphQL**.
+O projeto foi concebido como um laboratório prático de engenharia de software, com foco em **separação de responsabilidades, modelagem de domínio, arquitetura de software, persistência e construção de APIs**, utilizando **Clean Architecture**, conceitos de **Domain-Driven Design (DDD)** e uma API baseada em **GraphQL**.
+
+Além das funcionalidades relacionadas ao domínio de treinos, o projeto possui um subsistema de **autenticação e autorização baseado em JWT, Bearer Token e Refresh Token Rotation**, mantendo os mecanismos de infraestrutura desacoplados das regras de negócio.
 
 ---
 
@@ -39,6 +41,11 @@ A arquitetura foi pensada para permitir que novas regras de negócio e métricas
 * [x] Contratos de repositórios;
 * [x] Queries GraphQL;
 * [x] Mutations GraphQL;
+* [x] Autenticação JWT;
+* [x] Bearer Token;
+* [x] Refresh Token Rotation;
+* [x] Hashing de senhas;
+* [x] Proteção de resolvers GraphQL;
 * [ ] Testes automatizados;
 * [ ] Métricas avançadas;
 * [ ] Pipeline CI/CD;
@@ -46,7 +53,7 @@ A arquitetura foi pensada para permitir que novas regras de negócio e métricas
 
 ---
 
-## 🧠 Arquitetura
+# 🧠 Arquitetura
 
 A aplicação utiliza uma organização inspirada em **Clean Architecture**, buscando manter as regras de negócio independentes de frameworks e detalhes de infraestrutura.
 
@@ -83,13 +90,139 @@ A principal preocupação arquitetural é evitar que regras de negócio dependam
 * PostgreSQL;
 * Express;
 * Apollo Server;
+* bibliotecas de autenticação;
 * detalhes de infraestrutura.
 
-Dessa forma, os **Use Cases** podem depender de contratos definidos pelo domínio, enquanto a infraestrutura fornece as implementações concretas.
+Dessa forma, os **Use Cases** dependem de contratos definidos pelo domínio, enquanto a infraestrutura fornece as implementações concretas.
+
+Esse princípio também é aplicado ao subsistema de autenticação. Bibliotecas como `bcrypt` e `jsonwebtoken` não são utilizadas diretamente pelos casos de uso; elas são encapsuladas por abstrações e adapters específicos.
 
 ---
 
-## 📂 Estrutura
+# 🔐 Autenticação e Autorização
+
+O sistema possui um subsistema de autenticação e autorização **stateless** baseado em **JWT (JSON Web Token)**, utilizando o padrão **Bearer Token** para autenticação das requisições.
+
+A gestão das sessões utiliza **Refresh Token Rotation**, com os tokens de renovação persistidos no PostgreSQL e associados ao usuário autenticado.
+
+## Estratégia de autenticação
+
+```text
+┌──────────────┐
+│    Cliente   │
+└──────┬───────┘
+       │
+       │ e-mail + senha
+       ▼
+┌──────────────────────────┐
+│ AutenticarComSenhaUseCase│
+└────────────┬─────────────┘
+             │
+             ├── Hash / comparação
+             │   de senha
+             ▼
+       ┌──────────────┐
+       │   PostgreSQL │
+       └──────────────┘
+             │
+             │ Tokens
+             ▼
+┌──────────────────────────┐
+│       AuthPayload        │
+│                          │
+│ Access Token   → 15 min  │
+│ Refresh Token  → 7 dias  │
+└──────────────────────────┘
+```
+
+## Componentes
+
+### Domínio
+
+A camada de domínio define contratos para evitar que as regras de negócio dependam diretamente das bibliotecas utilizadas na infraestrutura.
+
+* `IPasswordHasher` — abstração para hashing e comparação de senhas;
+* `ITokenProvider` — abstração para geração e validação de tokens;
+* `IUsuarioRepository` — contrato para persistência de usuários;
+* `IRefreshTokenRepository` — contrato para gerenciamento dos Refresh Tokens.
+
+### Infraestrutura
+
+As implementações concretas ficam isoladas na camada de infraestrutura:
+
+* `BcryptAdapter` — hashing e comparação assíncrona de senhas;
+* `JwtAdapter` — geração e validação dos tokens JWT;
+* `PrismaUsuarioRepository` — persistência de usuários através do Prisma;
+* `PrismaRefreshTokenRepository` — persistência e controle dos Refresh Tokens.
+
+Essa abordagem mantém as regras de negócio desacopladas de `bcrypt`, `jsonwebtoken` e Prisma.
+
+### Application
+
+A autenticação é organizada através de casos de uso:
+
+* `CriarContaUseCase` — criação de usuário, hashing da senha e emissão inicial dos tokens;
+* `AutenticarComSenhaUseCase` — autenticação por e-mail e senha e rotação dos Refresh Tokens.
+
+### Presentation / GraphQL
+
+A camada GraphQL é responsável pela integração da autenticação com a API:
+
+* `AuthPayload` para retorno dos tokens;
+* Inputs específicos para autenticação;
+* `buildGraphQLContext` para extração do cabeçalho `Authorization`;
+* suporte ao padrão `Authorization: Bearer <token>`;
+* `requireAuth` para proteção de resolvers que exigem autenticação;
+* factories para composição dos casos de uso de autenticação.
+
+## Refresh Token Rotation
+
+Os Refresh Tokens possuem ciclo de vida controlado e são persistidos no PostgreSQL.
+
+O fluxo atual permite:
+
+1. emitir um Refresh Token durante a autenticação;
+2. associá-lo à sessão do usuário;
+3. controlar sua expiração;
+4. revogar o token utilizado;
+5. emitir um novo Refresh Token durante a renovação da sessão.
+
+```text
+Refresh Token atual
+        │
+        ▼
+┌───────────────────┐
+│ Validação         │
+│ Expiração         │
+│ Revogação         │
+└─────────┬─────────┘
+          │
+          ▼
+   Token revogado
+          │
+          ├──────────────► Novo Access Token
+          │
+          └──────────────► Novo Refresh Token
+```
+
+## Parâmetros atuais
+
+| Componente              | Estratégia   |
+| ----------------------- | ------------ |
+| Access Token            | JWT / Bearer |
+| Expiração Access Token  | `15 minutos` |
+| Refresh Token           | Rotacionável |
+| Expiração Refresh Token | `7 dias`     |
+| Persistência            | PostgreSQL   |
+| ORM                     | Prisma       |
+| Hash de senha           | Bcrypt       |
+| API                     | GraphQL      |
+
+A autenticação foi implementada como uma preocupação independente das regras específicas do domínio, permitindo que mecanismos de hashing, emissão de tokens ou persistência sejam substituídos sem alterar os casos de uso.
+
+---
+
+# 📂 Estrutura
 
 ```text
 src/
@@ -105,6 +238,7 @@ src/
 ├── application/
 │   ├── dtos/
 │   └── use-cases/
+│       ├── auth/
 │       ├── pessoa/
 │       ├── treino/
 │       └── exercicio/
@@ -142,7 +276,7 @@ src/
 
 ---
 
-## 🧩 Domínio
+# 🧩 Domínio
 
 O domínio atual é composto por quatro conceitos principais:
 
@@ -205,7 +339,7 @@ Principais dados:
 
 ---
 
-## 🗄️ Persistência
+# 🗄️ Persistência
 
 A persistência utiliza **PostgreSQL + Prisma ORM**.
 
@@ -232,9 +366,11 @@ taxaMetabolicaBasal Decimal?
 
 Isso permite manter a legibilidade e convenções do TypeScript sem abrir mão de uma convenção consistente no banco de dados.
 
+A persistência também é utilizada pelo subsistema de autenticação para armazenar usuários e Refresh Tokens.
+
 ---
 
-## 🛠️ Stack
+# 🛠️ Stack
 
 | Categoria       | Tecnologia            |
 | --------------- | --------------------- |
@@ -245,6 +381,8 @@ Isso permite manter a legibilidade e convenções do TypeScript sem abrir mão d
 | HTTP            | Express.js            |
 | Banco de dados  | PostgreSQL 16         |
 | ORM             | Prisma                |
+| Autenticação    | JWT / Bearer Token    |
+| Hash de senha   | Bcrypt                |
 | Containerização | Docker                |
 | Orquestração    | Docker Compose        |
 | Desenvolvimento | `ts-node` / `nodemon` |
@@ -252,18 +390,18 @@ Isso permite manter a legibilidade e convenções do TypeScript sem abrir mão d
 
 ---
 
-## 🐳 Ambiente de Desenvolvimento
+# 🐳 Ambiente de Desenvolvimento
 
 O PostgreSQL é executado através de Docker, permitindo reproduzir o ambiente de desenvolvimento sem depender de uma instalação local do banco.
 
-### Pré-requisitos
+## Pré-requisitos
 
 * Node.js `20+`;
 * npm;
 * Docker;
 * Docker Compose.
 
-### Clone
+## Clone
 
 ```bash
 git clone https://github.com/silascunha97/API_Para_treinos.git
@@ -271,13 +409,13 @@ git clone https://github.com/silascunha97/API_Para_treinos.git
 cd API_Para_treinos
 ```
 
-### Instale as dependências
+## Instale as dependências
 
 ```bash
 npm install
 ```
 
-### Configure as variáveis de ambiente
+## Configure as variáveis de ambiente
 
 Crie um arquivo `.env`:
 
@@ -287,7 +425,7 @@ DATABASE_URL="postgresql://usuario:senha@localhost:5432/workout_tracker"
 
 > Ajuste a URL conforme a configuração utilizada no `docker-compose.yml`.
 
-### Suba a infraestrutura
+## Suba a infraestrutura
 
 ```bash
 docker-compose up -d
@@ -299,13 +437,13 @@ Verifique os containers:
 docker-compose ps
 ```
 
-### Sincronize o schema
+## Sincronize o schema
 
 ```bash
 npx prisma db push
 ```
 
-### Execute a aplicação
+## Execute a aplicação
 
 ```bash
 npm run dev
@@ -313,7 +451,47 @@ npm run dev
 
 ---
 
-## 📊 Modelo de Dados
+# 🔑 Testando a Autenticação
+
+Após iniciar a aplicação e sincronizar o banco de dados, as mutations GraphQL relacionadas à autenticação podem ser utilizadas para testar o fluxo de criação de conta e login.
+
+### Fluxo conceitual
+
+```text
+Criar conta
+    │
+    ▼
+Hash da senha
+    │
+    ▼
+Persistência do usuário
+    │
+    ▼
+Emissão de tokens
+    │
+    ├── Access Token
+    │
+    └── Refresh Token
+             │
+             ▼
+       Persistência
+             │
+             ▼
+     Renovação da sessão
+             │
+             ▼
+     Rotação do token
+```
+
+O acesso a operações protegidas deve utilizar o cabeçalho:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+---
+
+# 📊 Modelo de Dados
 
 A estrutura atual do banco pode ser resumida da seguinte maneira:
 
@@ -354,11 +532,30 @@ A estrutura atual do banco pode ser resumida da seguinte maneira:
 └──────────────────┘
 ```
 
+A camada de autenticação adiciona ainda entidades relacionadas à identidade e gerenciamento de sessão:
+
+```text
+┌──────────────┐
+│   Usuario    │
+└──────┬───────┘
+       │
+       │ 1:N
+       ▼
+┌──────────────────┐
+│   RefreshToken   │
+├──────────────────┤
+│ id               │
+│ usuarioId        │
+│ expiraEm         │
+│ revogado         │
+└──────────────────┘
+```
+
 ---
 
-## 📐 Decisões Arquiteturais
+# 📐 Decisões Arquiteturais
 
-### Repository Pattern
+## Repository Pattern
 
 O domínio define contratos para os repositórios, enquanto a infraestrutura fornece as implementações.
 
@@ -374,26 +571,55 @@ Infrastructure
    └── PrismaPessoaRepository
 ```
 
-Isso reduz o acoplamento entre os casos de uso e o mecanismo de persistência.
+O mesmo princípio é aplicado aos mecanismos relacionados à autenticação:
 
-### Use Cases
+```text
+Domain
+   │
+   ├── IUsuarioRepository
+   ├── IRefreshTokenRepository
+   ├── IPasswordHasher
+   └── ITokenProvider
+             ▲
+             │ implements
+             │
+Infrastructure
+   │
+   ├── PrismaUsuarioRepository
+   ├── PrismaRefreshTokenRepository
+   ├── BcryptAdapter
+   └── JwtAdapter
+```
+
+Isso reduz o acoplamento entre os casos de uso e os mecanismos concretos de persistência e segurança.
+
+---
+
+## Use Cases
 
 As operações da aplicação são organizadas em casos de uso, evitando concentrar regras de negócio diretamente nos resolvers.
 
-Exemplos planejados:
+Exemplos:
 
 ```text
 CriarPessoaUseCase
 ObterMetabolismoUseCase
 IniciarSessaoTreinoUseCase
 CadastrarExercicioUseCase
+
+CriarContaUseCase
+AutenticarComSenhaUseCase
 ```
 
-### GraphQL
+---
 
-O GraphQL será utilizado como camada de apresentação da API, permitindo estruturar queries e mutations de acordo com as necessidades do cliente.
+## GraphQL
 
-O endpoint planejado para desenvolvimento é:
+O GraphQL é utilizado como camada de apresentação da API, permitindo estruturar queries e mutations de acordo com as necessidades do cliente.
+
+A autenticação é integrada ao contexto GraphQL, permitindo que resolvers protegidos verifiquem a identidade do usuário através do Access Token.
+
+O endpoint de desenvolvimento é:
 
 ```text
 http://localhost:4000/graphql
@@ -418,7 +644,9 @@ http://localhost:4000/graphql
 * [x] Chaves primárias;
 * [x] Chaves estrangeiras;
 * [x] Integridade referencial;
-* [x] Prisma Schema.
+* [x] Prisma Schema;
+* [x] Modelagem de usuários;
+* [x] Persistência de Refresh Tokens.
 
 ## 03 — Infraestrutura
 
@@ -435,8 +663,12 @@ http://localhost:4000/graphql
 * [x] TypeScript;
 * [x] Configuração do projeto;
 * [x] Estrutura arquitetural;
-* [x] Implementação completa dos Use Cases;
-* [x] Implementação dos resolvers.
+* [x] Implementação dos Use Cases;
+* [x] Implementação dos resolvers;
+* [x] Abstrações de autenticação;
+* [x] JWT;
+* [x] Bearer Token;
+* [x] Refresh Token Rotation.
 
 ## 05 — GraphQL
 
@@ -445,7 +677,9 @@ http://localhost:4000/graphql
 * [x] Queries;
 * [x] Mutations;
 * [x] Validação de inputs;
-* [x] Tratamento global de erros.
+* [x] Tratamento global de erros;
+* [x] Contexto de autenticação;
+* [x] Proteção de resolvers.
 
 ## 06 — Métricas
 
@@ -512,7 +746,7 @@ A cobertura será expandida conforme as funcionalidades do MVP forem implementad
 
 **Em desenvolvimento — MVP**
 
-O projeto está sendo desenvolvido de maneira incremental, partindo da modelagem do domínio e infraestrutura para posteriormente avançar para regras de negócio, API GraphQL, testes automatizados e CI/CD.
+O projeto está sendo desenvolvido de maneira incremental, partindo da modelagem do domínio e infraestrutura e avançando progressivamente para regras de negócio, autenticação, API GraphQL, testes automatizados e CI/CD.
 
 ### Progresso atual
 
@@ -521,12 +755,15 @@ Modelagem              ███████████████████
 Infraestrutura         ████████████████████ 100%
 Node.js + TypeScript   ████████████████████ 100%
 Prisma                 ███████████████████░  90%
-GraphQL                █████░░░░░░░░░░░░░░░  25%
-CRUD                   ░░░░░░░░░░░░░░░░░░░░   0%
-Métricas               ░░░░░░░░░░░░░░░░░░░░   0%
+Autenticação           ████████████████████ 100%
+GraphQL                █████████████████░░░  85%
+CRUD                   █████░░░░░░░░░░░░░░░  25%
+Métricas               ████████████████████ 100%
 Testes                 ░░░░░░░░░░░░░░░░░░░░   0%
 CI/CD                  ░░░░░░░░░░░░░░░░░░░░   0%
 ```
+
+> Os percentuais representam o estágio atual de desenvolvimento do projeto e não métricas automatizadas de cobertura ou qualidade.
 
 ---
 
@@ -542,6 +779,9 @@ Este projeto também funciona como laboratório prático para aprofundar conheci
 * Prisma ORM;
 * GraphQL;
 * TypeScript;
+* Autenticação e autorização;
+* JWT;
+* Refresh Token Rotation;
 * Docker;
 * Testes automatizados;
 * CI/CD;
@@ -558,7 +798,11 @@ Modelagem
     ↓
 Persistência
     ↓
+Arquitetura
+    ↓
 Use Cases
+    ↓
+Autenticação
     ↓
 GraphQL
     ↓
@@ -577,7 +821,7 @@ Deploy
 
 ---
 
-## 📄 Licença
+# 📄 Licença
 
 O projeto está atualmente em desenvolvimento e ainda não possui uma licença pública definida.
 
@@ -590,28 +834,3 @@ O projeto está atualmente em desenvolvimento e ainda não possui uma licença p
 Backend desenvolvido com TypeScript, GraphQL, Prisma e PostgreSQL.
 
 </div>
-
-### O que eu mudaria em relação ao README anterior
-
-Para **portfólio**, eu evitaria vender o projeto simplesmente como "API de treinos". O ponto mais interessante para um recrutador técnico é a **engenharia por trás dele**: você está usando o domínio de treino como problema para demonstrar modelagem, arquitetura, persistência, API e posteriormente CI/CD.
-
-Também fiz uma escolha importante: **não coloquei badges falsos de build, coverage, versão ou deploy**. Eles ficam ótimos em README, mas só devem entrar quando essas coisas realmente existirem.
-
-Quando o projeto avançar, eu adicionaria no topo algo como:
-
-```text
-[Node.js] [TypeScript] [GraphQL] [PostgreSQL] [Prisma] [Docker] [CI]
-```
-
-e, depois que houver implementação real:
-
-```text
-Build     ✓
-Tests     ✓
-Coverage  87%
-CI        ✓
-Docker    ✓
-Deploy    ✓
-```
-
-Isso deixa o README muito mais convincente porque o candidato não está apenas **afirmando** que conhece determinada tecnologia — o próprio repositório passa a servir como evidência.
