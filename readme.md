@@ -37,8 +37,8 @@ A arquitetura foi pensada para permitir que novas regras de negócio e métricas
 * [x] Estrutura baseada em Clean Architecture;
 * [x] Separação entre domínio, aplicação e infraestrutura;
 * [x] Contratos de repositórios;
-* [ ] Queries GraphQL;
-* [ ] Mutations GraphQL;
+* [x] Queries GraphQL;
+* [x] Mutations GraphQL;
 * [ ] Testes automatizados;
 * [ ] Métricas avançadas;
 * [ ] Pipeline CI/CD;
@@ -435,25 +435,25 @@ http://localhost:4000/graphql
 * [x] TypeScript;
 * [x] Configuração do projeto;
 * [x] Estrutura arquitetural;
-* [ ] Implementação completa dos Use Cases;
-* [ ] Implementação dos resolvers.
+* [x] Implementação completa dos Use Cases;
+* [x] Implementação dos resolvers.
 
 ## 05 — GraphQL
 
-* [ ] Apollo Server;
-* [ ] TypeDefs;
-* [ ] Queries;
-* [ ] Mutations;
-* [ ] Validação de inputs;
-* [ ] Tratamento global de erros.
+* [x] Apollo Server;
+* [x] TypeDefs;
+* [x] Queries;
+* [x] Mutations;
+* [x] Validação de inputs;
+* [x] Tratamento global de erros.
 
 ## 06 — Métricas
 
-* [ ] Volume total de carga;
-* [ ] Progressão de força;
-* [ ] Histórico de desempenho;
-* [ ] Indicadores metabólicos;
-* [ ] Análise de progressão.
+* [x] Volume total de carga;
+* [x] Progressão de força;
+* [x] Histórico de desempenho;
+* [x] Indicadores metabólicos;
+* [x] Análise de progressão.
 
 ### Fórmula inicial
 
