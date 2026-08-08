@@ -5,6 +5,52 @@
 
 ---
 
+## 🚀 MVP Release v1.0.0 — API para Treinos
+
+Esta Pull Request entrega o **MVP (Minimum Viable Product)** da API de Treinos. A aplicação foi desenvolvida aplicando os princípios de **Clean Architecture**, **Domain-Driven Design (DDD)**, e integração entre **GraphQL (Apollo Server v4)**, **Express** e **Prisma ORM** com banco de dados **PostgreSQL**.
+
+---
+
+## 📋 Entidades do Domínio e Relacionamentos Implementados
+
+A aplicação engloba o ciclo completo de monitoramento de treinos conforme a modelagem de domínio:
+
+* 👤 **Pessoa:** Armazena perfil físico e métricas do atleta (`peso`, `altura`, `taxaMetabolicaBasal`).
+* 🏋️ **Exercicio:** Catálogo de exercícios com suporte a grupos musculares e flag de carga adicional (`permiteCarga`).
+* ⏱️ **SessaoTreino:** Gerencia o ciclo de treino iniciado por uma pessoa (`dataHoraInicio`, `dataHoraFim`, `observacoes`).
+* 🔢 **Serie:** Registra o progresso de cada exercício executado dentro de uma sessão (`numeroSerie`, `repsRealizadas`, `cargaAdicional`, `concluido`).
+
+---
+
+## 🏗️ Destaques da Arquitetura
+
+1. **Clean Architecture / Camadas Isoladas:**
+   * `/domain`: Entidades puras e contratos dos repositórios (`IBaseRepository`, `IPessoaRepository`, etc.).
+   * `/application`: DTOs de entrada/saída e Casos de Uso (`Use Cases`) isolando as regras de negócio.
+   * `/infrastructure`: Instância *Singleton* do `PrismaClient` para evitar *connection leaks* e implementação concreta dos repositórios.
+   * `/presentation`: Schemas GraphQL (`typeDefs`), Resolvers e Middleware de formatação/sanitização global de erros (`formatError`).
+   * `/main`: Injeção de dependências (*Factories*) e inicialização do servidor HTTP/GraphQL (`app.ts`).
+
+2. **GraphQL SDL & Express:**
+   * Apollo Server v4 acoplado ao Express via `expressMiddleware`.
+   * Paginação genérica via *wrappers* GraphQL (`MetaPaginacao`, `PaginaPessoas`).
+   * Validação rigorosa de *inputs* e tipagem forte nos schemas.
+
+---
+
+## 🧪 Como Testar o MVP
+
+### 1. Subir a Infraestrutura Local
+```bash
+# Instalar dependências
+npm install
+
+# Subir banco de dados PostgreSQL via Docker
+docker-compose up -d
+
+# Executar as migrações/push do schema Prisma
+npx prisma db push
+
 ## 🏗️ Estrutura de Pastas
 
 ```
