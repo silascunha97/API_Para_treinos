@@ -1,15 +1,10 @@
 import { Request } from 'express';
-import { JwtAdapter } from '../../../infrastructure/providers/JwtAdapter';
+import { jwtAdapter } from '../../../main/factories/authFactory';
 import { TokenPayload } from '../../../domain/providers/ITokenProvider';
 
 export interface GraphQLContext {
   usuario: TokenPayload | null;
 }
-
-const jwtAdapter = new JwtAdapter(
-  process.env.JWT_ACCESS_SECRET || 'secret_access_key',
-  process.env.JWT_REFRESH_SECRET || 'secret_refresh_key'
-);
 
 export async function buildGraphQLContext({ req }: { req: Request }): Promise<GraphQLContext> {
   const authHeader = req.headers.authorization;

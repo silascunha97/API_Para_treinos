@@ -68,6 +68,7 @@ model Exercicio {
   nomeExercicio String   @map("nome_exercicio") @db.VarChar(100)
   grupoMuscular String?  @map("grupo_muscular") @db.VarChar(50)
   permiteCarga  Boolean  @default(true) @map("permite_carga")
+  tipoExercicio TipoExercicio @default(DINAMICO) @map("tipo_exercicio")
   series        Series[]
 
   @@map("exercicio")
@@ -95,8 +96,15 @@ model Series {
   concluido      Boolean?     @default(false)
   exercicio      Exercicio    @relation(fields: [idExercicio], references: [idExercicio], onUpdate: NoAction, map: "fk_series_exercicio")
   sessao         SessaoTreino @relation(fields: [idSessao], references: [idSessao], onDelete: Cascade, onUpdate: NoAction, map: "fk_series_sessao")
+  tempoIsometriaSeg Int?         @map("tempo_isometria_seg")
 
   @@map("series")
+}
+
+enum TipoExercicio {
+  DINAMICO
+  ISOMETRICO
+  HIBRIDO
 }
 
 enum ProvedorAutenticacao {

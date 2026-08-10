@@ -3,13 +3,22 @@ export interface RegistrarSerieDTO {
   idExercicio: number;
   numeroSerie: number;
   repsRealizadas?: number;
+  tempoIsometriaSeg?: number;
+  tempoPausaIsometricaSeg?: number;
   cargaAdicional?: number;
-  concluido?: boolean;
 }
 
-export interface AtualizarSerieDTO {
+export interface SerieResponseDTO {
   idSerie: number;
-  repsRealizadas?: number;
-  cargaAdicional?: number;
-  concluido?: boolean;
+  idSessao: number;
+  idExercicio: number;
+  numeroSerie: number;
+  repsRealizadas?: number | null;
+  tempoIsometriaSeg?: number | null;
+  tempoPausaIsometricaSeg?: number | null;
+  cargaAdicional?: number | null;
+  concluido: boolean;
+  
+  // Campo computado no DTO
+  tipoExecucaoSinalizada: 'DINAMICA' | 'ISOMETRICA' | 'DINAMICA_COM_PAUSA_ISOMETRICA';
 }
