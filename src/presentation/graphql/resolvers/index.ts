@@ -4,6 +4,7 @@ import { authResolvers } from './authResolvers';
 export const resolvers = {
   Query: {
     healthCheck: async () => 'API is healthy',
+    ...authResolvers.Query,
     ...('Query' in pessoaResolvers ? pessoaResolvers.Query : {}),
     obterExercicioPorId: async () => null,
     listarExercicios: async () => [],

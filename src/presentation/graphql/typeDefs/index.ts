@@ -4,13 +4,6 @@ export const typeDefs = `#graphql
   idToken: String!
   }
 
-  type Mutation {
-    registrar(input: RegistrarInput!): AuthPayload!
-    login(input: LoginInput!): AuthPayload!
-    autenticarComGoogle(input: AutenticarGoogleInput!): AuthPayload!
-  }
-
-
   # --- AUTENTICAÇÃO E USUÁRIO ---
   type Usuario {
     id: ID!
@@ -35,21 +28,6 @@ export const typeDefs = `#graphql
   input LoginInput {
     email: String!
     senha: String!
-  }
-
-  # --- QUERIES EXISTENTES ---
-  type Query {
-    healthCheck: String!
-    # ... demais queries
-  }
-
-  # --- MUTATIONS ---
-  type Mutation {
-    # Autenticação
-    registrar(input: RegistrarInput!): AuthPayload!
-    login(input: LoginInput!): AuthPayload!
-
-    # ... demais mutations
   }
 
   # --- METADADOS E PAGINAÇÃO ---
@@ -147,6 +125,11 @@ export const typeDefs = `#graphql
 
   # --- QUERIES E MUTATIONS ---
   type Query {
+    healthCheck: String!
+
+    # Autenticação
+    me: Usuario
+
     # Pessoas
     obterPessoaPorId(id: ID!): Pessoa
     listarPessoas(pagina: Int = 1, limite: Int = 10): PaginaPessoas!
@@ -161,6 +144,11 @@ export const typeDefs = `#graphql
   }
 
   type Mutation {
+    # Autenticação
+    registrar(input: RegistrarInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
+    autenticarComGoogle(input: AutenticarGoogleInput!): AuthPayload!
+
     # Pessoas
     criarPessoa(input: CreatePessoaInput!): Pessoa!
     atualizarPessoa(input: UpdatePessoaInput!): Pessoa!

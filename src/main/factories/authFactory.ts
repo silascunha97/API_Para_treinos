@@ -5,6 +5,7 @@ import { JwtAdapter } from '../../infrastructure/providers/JwtAdapter';
 import { CriarContaUseCase } from '../../application/use-cases/auth/CriarContaUseCase';
 import { AutenticarComSenhaUseCase } from '../../application/use-cases/auth/AutenticarComSenhaUseCase';
 import { AutenticarComGoogleUseCase } from '@src/application/use-cases/auth/AutenticarComGoogleUseCase';
+import { ObterUsuarioLogadoUseCase } from '../../application/use-cases/auth/ObterUsuarioLogadoUseCase';
 import { PrismaContaRepository } from '../../infrastructure/repositories/PrismaContaRepository';
 import { GoogleAuthAdapter } from '../../infrastructure/repositories/GoogleAuthAdapter';
 
@@ -17,7 +18,10 @@ const passwordHasher = new BcryptAdapter(10);
 const contaRepository = new PrismaContaRepository();
 const googleAuthProvider = new GoogleAuthAdapter(process.env.GOOGLE_CLIENT_ID || '');
 
-const jwtAdapter = new JwtAdapter(
+// Instância única do JwtAdapter: precisa ser compartilhada entre quem assina os tokens
+// (use cases abaixo) e quem os verifica (buildGraphQLContext), senão tokens assinados
+// aqui deixam de validar em outro lugar que use um fallback de secret diferente.
+export const jwtAdapter = new JwtAdapter(
   process.env.JWT_ACCESS_SECRET || 'access_secret_key_default',
   process.env.JWT_REFRESH_SECRET || 'refresh_secret_key_default',
   '15m',
@@ -51,4 +55,8 @@ export function makeAutenticarComGoogleUseCase(): AutenticarComGoogleUseCase {
     jwtAdapter,
     passwordHasher
   );
+}
+
+export function makeObterUsuarioLogadoUseCase(): ObterUsuarioLogadoUseCase {
+  return new ObterUsuarioLogadoUseCase(usuarioRepository);
 }

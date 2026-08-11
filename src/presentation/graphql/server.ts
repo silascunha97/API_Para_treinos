@@ -3,7 +3,7 @@ import { expressMiddleware } from '@as-integrations/express5';
 import cors from 'cors';
 import express, { Application } from 'express';
 import http from 'http';
-import { GraphQLContext } from '../../@types/graphql';
+import { GraphQLContext, buildGraphQLContext } from './context';
 import { formatGraphQLError } from '../errors/formatError';
 import { resolvers } from './resolvers'; // Import actual resolvers
 import { typeDefs } from './typeDefs';
@@ -29,18 +29,9 @@ export async function createGraphQLServer(): Promise<{
     cors<cors.CorsRequest>(),
     express.json(),
     expressMiddleware(server, {
-      context: async ({ req }): Promise<GraphQLContext> => {
-        const headerUsuarioId = req.headers['x-usuario-id'];
-        const usuarioId =
-          typeof headerUsuarioId === 'string'
-            ? Number(headerUsuarioId)
-            : Number.NaN;
-
-        return {
-          req,
-          ...(Number.isInteger(usuarioId) && usuarioId > 0 ? { usuarioId } : {}),
-        };
-      },
+      // Decodifica o Bearer JWT do header Authorization e popula context.usuario
+      // (mesma lógica usada pelo guard requireAuth em ./guards/graph.guards.ts).
+      context: buildGraphQLContext,
     }),
   );
 
