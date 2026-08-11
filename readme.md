@@ -46,7 +46,7 @@ A arquitetura foi pensada para permitir que novas regras de negócio e métricas
 * [x] Refresh Token Rotation;
 * [x] Hashing de senhas;
 * [x] Proteção de resolvers GraphQL;
-* [ ] Testes automatizados;
+* [x] Testes automatizados;
 * [ ] Métricas avançadas;
 * [ ] Pipeline CI/CD;
 * [ ] Deploy em ambiente Cloud.
@@ -697,9 +697,9 @@ Volume Total = Séries × Repetições × Carga
 
 ## 07 — Qualidade
 
-* [ ] Jest;
+* [x] Jest;
 * [ ] Supertest;
-* [ ] Testes unitários;
+* [x] Testes unitários;
 * [ ] Testes de integração;
 * [ ] ESLint;
 * [ ] Prettier.
@@ -716,29 +716,194 @@ Volume Total = Séries × Repetições × Carga
 
 ---
 
-# 🧪 Testes
+# 🧪 Testes Automatizados
 
-A estratégia de testes planejada contempla diferentes níveis:
+A aplicação possui uma estratégia de testes automatizados orientada à
+validação das regras de negócio e do comportamento dos casos de uso.
+
+A suíte utiliza **Jest** como framework de testes e prioriza testes
+isolados, mantendo dependências externas controladas durante a execução.
+
+## Estratégia de Testes
+
+A estratégia segue a separação arquitetural do projeto:
 
 ```text
-                  ┌───────────────────┐
-                  │ Integration Tests │
-                  └─────────┬─────────┘
-                            │
-                  ┌─────────▼─────────┐
-                  │   GraphQL / API   │
-                  └─────────┬─────────┘
-                            │
-                  ┌─────────▼─────────┐
-                  │    Use Cases      │
-                  └─────────┬─────────┘
-                            │
-                  ┌─────────▼─────────┐
-                  │  Domain / Rules   │
-                  └───────────────────┘
+                    ┌──────────────────────┐
+                    │   Integration Tests  │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────▼───────────┐
+                    │    GraphQL / API     │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────▼───────────┐
+                    │      Use Cases       │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────▼───────────┐
+                    │ Domain / Business    │
+                    │       Rules          │
+                    └───────────────────────┘
 ```
 
-A cobertura será expandida conforme as funcionalidades do MVP forem implementadas.
+Neste estágio, o foco está nos **testes unitários**, especialmente na
+validação das regras de negócio e dos casos de uso, mantendo a infraestrutura
+externa isolada durante a execução.
+
+---
+
+## 🧩 Testes Unitários
+
+Os testes unitários têm como objetivo verificar o comportamento de cada
+unidade de negócio de forma independente.
+
+A estratégia contempla a validação de:
+
+- Entidades do domínio;
+- Regras de negócio;
+- Use Cases;
+- Validações;
+- Tratamento de erros;
+- Comportamentos esperados das dependências.
+
+A intenção é garantir que alterações em determinada regra de negócio possam
+ser validadas sem depender diretamente do banco de dados, servidor GraphQL
+ou outros serviços externos.
+
+### Isolamento das Dependências
+
+As dependências utilizadas pelos Use Cases podem ser substituídas por mocks
+ou implementações controladas durante os testes.
+
+```text
+             Use Case
+                │
+       ┌────────┴────────┐
+       │                 │
+       ▼                 ▼
+ Repository Mock    Service Mock
+       │                 │
+       └────────┬────────┘
+                │
+                ▼
+          Test Assertions
+```
+
+Esse isolamento permite verificar o comportamento da aplicação sem que o
+resultado do teste dependa diretamente do PostgreSQL, Prisma ou de outros
+componentes de infraestrutura.
+
+---
+
+## 🔬 Cenários Testados
+
+A suíte contempla cenários de sucesso e falha.
+
+### Cenários positivos
+
+- Deve executar a operação quando os dados são válidos;
+- Deve retornar o resultado esperado;
+- Deve chamar as dependências necessárias;
+- Deve respeitar as regras de negócio definidas.
+
+### Cenários negativos
+
+- Deve rejeitar dados inválidos;
+- Deve lançar os erros de domínio esperados;
+- Deve impedir operações que violem regras de negócio;
+- Deve tratar corretamente dependências que retornam falhas.
+
+---
+
+## 🧪 Execução dos Testes
+
+Para executar toda a suíte:
+
+```bash
+npm test
+```
+
+Para executar os testes em modo de observação:
+
+```bash
+npm run test:watch
+```
+
+Para executar os testes com relatório de cobertura:
+
+```bash
+npm run test:coverage
+```
+
+> Os comandos acima devem refletir os scripts configurados no `package.json`.
+
+---
+
+## 📊 Cobertura
+
+A cobertura de testes é utilizada como indicador complementar da qualidade
+da suíte.
+
+O objetivo não é simplesmente atingir uma porcentagem elevada de cobertura,
+mas garantir que os principais comportamentos e caminhos críticos da
+aplicação estejam protegidos por testes automatizados.
+
+```text
+Domain
+   │
+   ├── Regras de negócio
+   │
+   └── Entidades
+          │
+          ▼
+       Use Cases
+          │
+          ▼
+    Testes Unitários
+          │
+          ▼
+     Test Assertions
+```
+
+---
+
+## 🧱 Organização
+
+Os testes acompanham a organização arquitetural da aplicação, mantendo uma
+relação clara entre código de produção e código de teste.
+
+```text
+src/
+├── domain/
+├── application/
+├── infrastructure/
+└── presentation/
+
+tests/
+├── domain/
+├── application/
+├── infrastructure/
+└── presentation/
+```
+
+A organização poderá evoluir conforme novos níveis de teste forem
+adicionados.
+
+---
+
+## 🚧 Próximas Etapas
+
+A estratégia de qualidade será expandida progressivamente:
+
+- [x] Configuração do Jest;
+- [x] Testes unitários;
+- [ ] Testes de integração;
+- [ ] Testes dos resolvers GraphQL;
+- [ ] Testes de autenticação;
+- [ ] Testes de persistência;
+- [ ] Relatório de cobertura integrado ao CI;
+- [ ] Execução automática dos testes via GitHub Actions.
 
 ---
 
@@ -759,7 +924,7 @@ Autenticação           ██████████████████�
 GraphQL                █████████████████░░░  85%
 CRUD                   █████░░░░░░░░░░░░░░░  25%
 Métricas               ████████████████████ 100%
-Testes                 ░░░░░░░░░░░░░░░░░░░░   0%
+Testes                 ██████████░░░░░░░░░░  50%
 CI/CD                  ░░░░░░░░░░░░░░░░░░░░   0%
 ```
 
